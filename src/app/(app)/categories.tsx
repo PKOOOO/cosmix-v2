@@ -178,7 +178,8 @@ const Categories: React.FC = () => {
 
                     <Text
                         style={{
-                            fontFamily: "PhilosopherBold",
+                            fontFamily: "Philosopher",
+                            fontWeight: "bold",
                             fontSize: 24,
                             letterSpacing: 3,
                             color: baseTextColor,

@@ -69,16 +69,17 @@ export default function Page() {
         }}
         className="flex-row items-center justify-center px-4 py-5 mt-8"
       >
-        <Text
-          style={{
-            fontSize: 24,
-            fontFamily: "Philosopher-Bold",
-            letterSpacing: 3,
-            color: darkBrown,
-          }}
-        >
-          COSMIX
-        </Text>
+          <Text
+              style={{
+                  fontSize: 26,
+                  fontFamily: "Philosopher",
+                  fontWeight: "bold",
+                  letterSpacing: 3,
+                  color: darkBrown,
+              }}
+          >
+              COSMIX
+          </Text>
         <TouchableOpacity
           onPress={() => setMenuVisible(true)}
           style={{ position: "absolute", right: 16 }}
