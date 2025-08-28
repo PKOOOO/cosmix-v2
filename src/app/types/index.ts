@@ -1,75 +1,76 @@
-// types/index.ts
-export interface Category {
+// src/app/types.ts
+export interface User {
   id: string;
-  storeId: string;
-  billboardId: string;
-  name: string;
-  iconId: string;
-  iconvalue: string;
-  createdAt: string;
-  updatedAt: string;
-  billboard?: Billboard;
-  icon?: Icon;
-  products?: Product[];
+  clerkId: string;
+  email: string;
+  name?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Billboard {
+export interface Store {
   id: string;
-  storeId: string;
-  label: string;
-  imageUrl: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Icon {
-  id: string;
-  storeId: string;
   name: string;
-  iconvalue: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Product {
-  id: string;
-  storeId: string;
-  categoryId: string;
-  name: string;
-  price: string;
-  isFeatured: boolean;
-  isArchived: boolean;
-  sizeId: string;
-  colorId: string;
-  createdAt: string;
-  updatedAt: string;
+  userId: string;
+  description?: string;
+  shortIntro?: string;
+  rating: number;
+  address?: string;
+  createdAt?: string;
+  updatedAt?: string;
   images?: Image[];
-  size?: Size;
-  color?: Color;
+  categories?: Category[];
+  services?: Service[];
 }
 
 export interface Image {
   id: string;
-  productId: string;
+  storeId: string;
   url: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Size {
+export interface Category {
   id: string;
   storeId: string;
   name: string;
-  value: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  services?: Service[];
 }
 
-export interface Color {
+export interface Service {
   id: string;
-  storeId: string;
   name: string;
-  value: string;
-  createdAt: string;
-  updatedAt: string;
+  description?: string;
+  categoryId: string;
+  parentServiceId?: string;
+  price?: number;
+  durationMinutes?: number;
+  isPopular: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  category?: Category;
+  parentService?: Service;
+  subServices?: Service[];
+}
+
+export interface Booking {
+  id: string;
+  userId: string;
+  serviceId: string;
+  storeId: string;
+  bookingTime: string;
+  status: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  notes?: string;
+  totalAmount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  user?: User;
+  service?: Service;
+  store?: Store;
 }

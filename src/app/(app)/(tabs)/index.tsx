@@ -1,15 +1,21 @@
 // Page.js
-import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, Image, Modal } from "react-native";
+import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, Image, Modal, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Svg, { Path } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { useFonts } from "expo-font";
 import SideMenu from '../../components/SideMenu';
+import getCategories from '../../actions/get-categories';
+import { Category } from '../../types';
+import Header from "../../components/Header";
 
 export default function Page() {
   const router = useRouter();
   const [isMenuVisible, setMenuVisible] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load all Philosopher font variants
   const [fontsLoaded] = useFonts({
@@ -25,11 +31,31 @@ export default function Page() {
   const veryLightBeige = "#F4EDE5";
   const white = "#FFFFFF";
 
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getCategories();
+        setCategories(data);
+        console.log('Fetched categories:', data);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch categories');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   // Don't render if fonts aren't loaded
   if (!fontsLoaded) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: white, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading...</Text>
+        <Text>Loading fonts...</Text>
       </SafeAreaView>
     );
   }
@@ -53,40 +79,28 @@ export default function Page() {
     },
   ];
 
+  // Function to chunk array into rows of 2 items
+  const chunkArray = (array: any[], chunkSize: number) => {
+    const result = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      result.push(array.slice(i, i + chunkSize));
+    }
+    return result;
+  };
+
+  // Prepare categories for display (first 11 categories + "Lisää")
+  const displayCategories = [
+    ...categories.slice(0, 11).map(cat => cat.name),
+    "Lisää"
+  ];
+
+  // Chunk into rows of 2
+  const categoryRows = chunkArray(displayCategories, 2);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: white }}>
       {/* FIXED HEADER - Outside ScrollView */}
-      <View
-        style={{
-          backgroundColor: white,
-          borderBottomWidth: 1,
-          borderBottomColor: '#f0f0f0',
-          elevation: 2, // Android shadow
-          shadowColor: '#000', // iOS shadow
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.1,
-          shadowRadius: 2,
-        }}
-        className="flex-row items-center justify-center px-4 py-5 mt-8"
-      >
-          <Text
-              style={{
-                  fontSize: 26,
-                  fontFamily: "Philosopher",
-                  fontWeight: "bold",
-                  letterSpacing: 3,
-                  color: darkBrown,
-              }}
-          >
-              COSMIX
-          </Text>
-        <TouchableOpacity
-          onPress={() => setMenuVisible(true)}
-          style={{ position: "absolute", right: 16 }}
-        >
-          <Ionicons name="menu" size={28} color={darkBrown} />
-        </TouchableOpacity>
-      </View>
+    <Header onMenuPress={() => setMenuVisible(true)} />
 
       {/* SCROLLABLE CONTENT */}
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
@@ -212,65 +226,111 @@ export default function Page() {
         </View>
 
         {/* CATEGORIES */}
-       <View className="px-4 py-6">
+        <View className="px-4 py-6">
           <Text
             style={{
               textAlign: "center",
               color: darkBrown,
               fontFamily: "Philosopher-Bold",
               fontSize: 25,
+              marginBottom: 20,
             }}
           >
             Kategoriat
           </Text>
-          <View className="mt-4">
-            {[
-              ["Kynnet", "Ripset"],
-              ["Hieronnat", "Karvanpoistot"],
-              ["Kasvohoidot", "Hiukset"],
-              ["Parturi", "Jalkahoidot"],
-              ["Meikki", "Esteettiset hoidot"],
-              ["Kulmat", "Lisää"],
-            ].map((row, rowIdx) => (
-              <View key={rowIdx} style={{ flexDirection: "row", justifyContent: "center", gap: 51, marginBottom: 20 }}>
-                {row.map((cat, colIdx) => (
-                  <TouchableOpacity
-                    key={colIdx}
-                    style={{
-                      backgroundColor: "#D7C3A7",
-                      width: 127,
-                      height: 47,
-                      borderRadius: 30,
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                    onPress={() => {
-                      if (cat === "Lisää") {
-                        router.push("/categories");
-                      }
-                    }}
-                  >
-                    <Text
+
+          {/* Loading State */}
+          {loading && (
+            <View style={{ alignItems: "center", justifyContent: "center", padding: 20 }}>
+              <ActivityIndicator size="large" color={darkBrown} />
+              <Text style={{ color: darkBrown, fontFamily: "Philosopher-Regular", marginTop: 10 }}>
+                Ladataan kategorioita...
+              </Text>
+            </View>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <View style={{ alignItems: "center", justifyContent: "center", padding: 20 }}>
+              <Text style={{ color: "red", fontFamily: "Philosopher-Regular", textAlign: "center" }}>
+                Virhe: {error}
+              </Text>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: lightBrown,
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  borderRadius: 8,
+                  marginTop: 10,
+                }}
+                onPress={() => {
+                  // Retry fetching
+                  setError(null);
+                  setLoading(true);
+                  getCategories()
+                    .then(setCategories)
+                    .catch((err) => setError(err.message))
+                    .finally(() => setLoading(false));
+                }}
+              >
+                <Text style={{ fontFamily: "Philosopher-Bold", color: darkBrown }}>
+                  Yritä uudelleen
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Categories Grid */}
+          {!loading && !error && (
+            <View className="mt-4">
+              {categoryRows.map((row, rowIdx) => (
+                <View key={rowIdx} style={{ flexDirection: "row", justifyContent: "center", gap: 51, marginBottom: 20 }}>
+                  {row.map((categoryName, colIdx) => (
+                    <TouchableOpacity
+                      key={colIdx}
                       style={{
-                        color: darkBrown,
-                        textAlign: "center",
-                        fontFamily: "Philosopher-Bold",
+                        backgroundColor: lightBrown,
+                        width: 127,
+                        height: 47,
+                        borderRadius: 30,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                      onPress={() => {
+                        if (categoryName === "Lisää") {
+                          router.push("/categories");
+                        } else {
+                          // Navigate to services page with category name
+                          router.push({
+                            pathname: "/services",
+                            params: { categoryName }
+                          });
+                        }
                       }}
                     >
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ))}
-          </View>
+                      <Text
+                        style={{
+                          color: darkBrown,
+                          textAlign: "center",
+                          fontFamily: "Philosopher-Bold",
+                          fontSize: 15,
+                          paddingHorizontal: 8,
+                        }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {categoryName}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* LOGIN & ENTREPRENEURS */}
-                <View
-          style={{ backgroundColor: lightBrown }}
-          className="py-8"
-        >
+        <View style={{ backgroundColor: lightBrown }} className="py-8">
           <View className="flex-row" style={{ justifyContent: "center", gap: 49 }}>
             <View
               style={{
@@ -306,7 +366,7 @@ export default function Page() {
         </View>
 
         {/* FOOTER LINKS */}
-<View className="py-6 px-4">
+        <View className="py-6 px-4">
           {[
             ["Käyttöehdot", "Palvelut"],
             ["Meistä", "Etusivu"],
@@ -333,8 +393,6 @@ export default function Page() {
           ))}
         </View>
       </ScrollView>
-
-      {/* BOTTOM NAV */}
 
       {/* Modal for the side menu */}
       <Modal
